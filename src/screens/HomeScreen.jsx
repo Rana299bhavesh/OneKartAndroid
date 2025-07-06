@@ -7,7 +7,7 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  
+
   Alert,
 } from 'react-native';
 import { ActivityIndicator } from 'react-native';
@@ -20,6 +20,8 @@ import Geolocation from '@react-native-community/geolocation';
 
 import auth from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+import { Dimensions } from 'react-native';
+
 import axios from 'axios';
 import UserIconWithModal from '../components/UserIconWithModal';
 const platforms = [
@@ -93,15 +95,19 @@ const productCardData = [
   // Duplicate this object as needed...
 ];
 
+
 export default function HomeScreen() {
   const [selectedRows, setSelectedRows] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
-const [username, setUsername] = useState('User');
-
+  const [username, setUsername] = useState('User');
+  
   const [locationInput, setLocationInput] = useState('');
   const [loadingLocation, setLoadingLocation] = useState(true);
 
   const navigation = useNavigation();
+  const screenWidth = Dimensions.get('window').width;
+  const CARD_MARGIN = 12;
+  const CARD_WIDTH = (screenWidth - CARD_MARGIN * 3) / 2; // 2 cards + 3 gaps (left, right, and between)
 
   useEffect(() => {
     const user = auth().currentUser;
@@ -254,7 +260,17 @@ const [username, setUsername] = useState('User');
         {/* Product Cards */}
         <View style={styles.cardGrid}>
           {productCardData.map((item, index) => (
-            <View key={index} style={styles.card}>
+            <View
+              key={index}
+              style={[
+                styles.card,
+                {
+                  width: CARD_WIDTH,
+                  marginBottom: 20, // Add margin on both sides
+                },
+              ]}>
+
+
               <Image source={item.image} style={styles.productImage} />
               <View style={styles.cardInner}>
                 <Text style={styles.productTitle}>{item.title}</Text>
@@ -275,9 +291,9 @@ const [username, setUsername] = useState('User');
                     >
                       <Image source={platformLogos[platform]} style={styles.priceLogo} />
                       <View style={styles.timePriceRow}>
-                      <View style={styles.timeBox}>
-                        <Text style={styles.timeText}>{time}</Text>
-                      </View>
+                        <View style={styles.timeBox}>
+                          <Text style={styles.timeText}>{time}</Text>
+                        </View>
                       </View>
                       <View style={styles.priceBox}>
                         <Text style={styles.priceText}>{price}</Text>
@@ -320,8 +336,8 @@ const styles = StyleSheet.create({
   userButton: {
 
     padding: 5,
-  borderRadius: 10,
-  backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
   },
   banner: {
     width: '100%',
@@ -337,24 +353,24 @@ const styles = StyleSheet.create({
   },
   platformsRow: {
     flexDirection: 'row',
-  justifyContent: 'space-evenly', // evenly spaced icons
-  alignItems: 'center',
-  marginBottom: 20,
-  paddingHorizontal: 0,
+    justifyContent: 'space-evenly', // evenly spaced icons
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 0,
   },
   platformWrapper: {
-  width: 75,             // consistent box width
-  height: 45,            // consistent box height
-  borderWidth: 1.5,
-  borderColor: '#ccc',
-  borderRadius: 10,
-  backgroundColor: '#fff',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 5,
-  marginHorizontal: 1,
-  overflow: 'hidden',
-  elevation: 1,
+    width: 75,             // consistent box width
+    height: 45,            // consistent box height
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 5,
+    marginHorizontal: 1,
+    overflow: 'hidden',
+    elevation: 1,
   },
   platformIcon: {
     width: 110,
@@ -363,12 +379,12 @@ const styles = StyleSheet.create({
     // consistent border radius
   },
   timePriceRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  flex: 1,
-  marginLeft: 10, // spacing between logo and time box
-  gap: 10,
-},
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flex: 1,
+    marginLeft: 10, // spacing between logo and time box
+    gap: 10,
+  },
   compareHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -384,65 +400,69 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   card: {
-    width: '48%',
     backgroundColor: '#f2f2f2',
     borderRadius: 16,
-    marginBottom: 15,
+    marginBottom: 20,
+    marginTop: 5,
     elevation: 4,
     overflow: 'hidden',
+    marginHorizontal: 0, // Add horizontal margin for spacing
+
   },
   productImage: {
     width: '100%',
     height: 100,
     resizeMode: 'cover',
   },
-  cardInner: { padding: 10 },
+  cardInner: { padding: 8 },
   productTitle: { fontWeight: 'bold', fontSize: 15, color: 'black' },
   productDesc: { fontSize: 12, color: 'black', marginBottom: 8 },
   availableText: { fontWeight: '600', marginBottom: 4, color: 'black' },
   priceRow: {
     flexDirection: 'row',
-  alignItems: 'center',
-  marginBottom: 6,
-  paddingVertical: 4,
-  paddingHorizontal: 6,
-  borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    borderWidth: 1, // ✅ always present
+    borderColor: '#ccc',
   },
   selectedRow: {
     backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#ccc',
-  
+    // borderWidth: 1,
+    // borderColor: '#ccc',
+
 
   },
   priceLogo: {
-    width: 40,
-  height: 25,
-  resizeMode: 'contain',
-  borderRadius: 6,
+    width: 50,
+    height: 30,
+    resizeMode: 'contain',
+    borderRadius: 6,
   },
   timeBox: {
-  backgroundColor: '#FFE4B5',
-  paddingHorizontal: 6,
-  paddingVertical: 2, // MATCHED
-  borderRadius: 6,
-  borderWidth: 1.5,
-  borderColor: '#FB8C0080',
-  alignItems: 'center',
-  justifyContent: 'center',
+    backgroundColor: '#FFE4B5',
+    paddingHorizontal: 6,
+    paddingVertical: 2, // MATCHED
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#FB8C0080',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  timeText: { color: '#FF8C00', fontSize: 12, fontWeight: '600' },
+  timeText: { color: '#FF8C00', fontSize: 10, fontWeight: '500' },
   priceBox: {
-  backgroundColor: '#E0F3E0',
-  paddingHorizontal: 6,
-  paddingVertical: 4, // MATCHED
-  borderRadius: 6,
-  borderWidth: 1.5,
-  borderColor: '#A5D6A7',
-  alignItems: 'center',
-  justifyContent: 'center',
+    backgroundColor: '#E0F3E0',
+    paddingHorizontal: 6,
+    paddingVertical: 4, // MATCHED
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#A5D6A7',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  priceText: { fontWeight: '500', fontSize: 13 },
+  priceText: { fontWeight: '500', fontSize: 11 },
   cartButton: {
     backgroundColor: 'green',
     marginTop: 8,

@@ -10,7 +10,8 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import { CommonActions } from '@react-navigation/native';
+import { signUpSchema } from '../components/validationSchemas';
 const InputField = ({
   icon,
   placeholder,
@@ -86,48 +87,57 @@ const SignUpScreen = ({ navigation }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  const onRegister = async () => {
-    setErrorMessage('');
-    setSuccessMessage('');
+ const onRegister = async () => {
+  setErrorMessage('');
+  setSuccessMessage('');
 
-    if (!name || !email || !password || !confirmPassword) {
-      setErrorMessage('Please fill all fields');
-      return;
+  const result = signUpSchema.safeParse({
+    name,
+    email,
+    password,
+    confirmPassword,
+  });
+
+  if (!result.success) {
+    const errorField = result.error.errors[0];
+    setErrorMessage(errorField.message);
+    return;
+  }
+
+  try {
+    const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+
+    await userCredential.user.updateProfile({
+      displayName: name,
+    });
+
+    await firestore().collection('users').doc(userCredential.user.uid).set({
+      uid: userCredential.user.uid,
+      name,
+      email,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+    });
+
+    setSuccessMessage('User account created successfully!');
+    setTimeout(() => {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        })
+      );
+    }, 1500);
+  } catch (error) {
+    if (error.code === 'auth/email-already-in-use') {
+      setErrorMessage('That email address is already in use!');
+    } else if (error.code === 'auth/invalid-email') {
+      setErrorMessage('That email address is invalid!');
+    } else {
+      setErrorMessage('Something went wrong: ' + error.message);
     }
+  }
+};
 
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match');
-      return;
-    }
-
-    try {
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-
-      await userCredential.user.updateProfile({
-        displayName: name,
-      });
-
-      await firestore().collection('users').doc(userCredential.user.uid).set({
-        uid: userCredential.user.uid,
-        name,
-        email,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-      });
-
-      setSuccessMessage('User account created successfully!');
-      setTimeout(() => {
-        navigation.replace('Home');
-      }, 1500);
-    } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
-        setErrorMessage('That email address is already in use!');
-      } else if (error.code === 'auth/invalid-email') {
-        setErrorMessage('That email address is invalid!');
-      } else {
-        setErrorMessage('Something went wrong: ' + error.message);
-      }
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -234,22 +244,22 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontFamily: 'Poppins-Regular',
   },
-  
+
   inputWrapper: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#fff',
-  borderRadius: 100,
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  width: '90%',
-  marginTop: 38,
-  elevation: 4,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    width: '90%',
+    marginTop: 38,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
 
   iconCircle: {
     width: 30,

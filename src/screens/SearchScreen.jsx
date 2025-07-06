@@ -3,119 +3,80 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TextInput,
-  TouchableOpacity,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import UserIconWithModal from '../components/UserIconWithModal';
 import { useRoute } from '@react-navigation/native';
-const productImage = require('../assets/Images/boofer.png'); // Replace with actual image path
-const blinkitLogo = require('../assets/Images/blinkit.png');
-const zeptoLogo = require('../assets/Images/zepto.png');
 
-const platforms = [
-  { name: 'blinkit', logo: blinkitLogo },
-  { name: 'zepto', logo: zeptoLogo },
+const products = [
+  'Apples',
+  'Bananas',
+  'Tomatoes',
+  'Milk',
+  'Bread',
+  'Butter',
+  'Rice',
+  'Wheat',
+  'Oil',
+  'Sugar',
 ];
 
 const SearchScreen = () => {
-  const [selectedCards, setSelectedCards] = useState({});
   const route = useRoute();
   const locationFromParams = route.params?.locationInput || 'Loading location...';
-  const toggleSelect = (index) => {
-    setSelectedCards((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
-  };
+  const [searchText, setSearchText] = useState('');
+
+  const filteredProducts = products.filter(item =>
+    item.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-  {/* Left: Map icon + location */}
-  <View style={styles.locationBox}>
-    <Icon name="map-marker" size={24} color="#000" style={{ marginRight: 8 }} />
-    <View style={{ flexShrink: 1 }}>
-      <Text style={styles.city} numberOfLines={1} ellipsizeMode="tail">
-        {locationFromParams}
-      </Text>
-      <Text style={styles.country}>India</Text>
-    </View>
-  </View>
-
-  {/* Right: User icon */}
-  <View style={styles.userButton}>
-    <UserIconWithModal />
-  </View>
-</View>
-
-
-
-      <View style={styles.searchContainer}>
-        <Icon name="magnify" size={24} color="gray" />
-        <TextInput placeholder="Atta" style={styles.searchInput} />
+        <View style={styles.locationBox}>
+          <Icon name="map-marker" size={24} color="#000" style={{ marginRight: 8 }} />
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.city} numberOfLines={1} ellipsizeMode="tail">
+              {locationFromParams}
+            </Text>
+            <Text style={styles.country}>India</Text>
+          </View>
+        </View>
+        <View style={styles.userButton}>
+          <UserIconWithModal />
+        </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {platforms.map((platform, idx) => (
-          <View key={idx} style={styles.platformSection}>
-            <View style={styles.platformHeader}>
-              <Image source={platform.logo} style={styles.platformLogo} />
-              <Text style={styles.seeAll}>See All</Text>
-            </View>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Icon name="magnify" size={24} color="gray" />
+        <TextInput
+          placeholder="Search products..."
+          value={searchText}
+          onChangeText={setSearchText}
+          style={styles.searchInput}
+          returnKeyType="search"
+        />
+      </View>
 
-            {[1, 2].map((_, index) => {
-              const cardIndex = `${idx}-${index}`;
-              return (
-                <View
-                  key={cardIndex}
-                  style={[
-                    styles.card,
-                    selectedCards[cardIndex] && styles.selectedCard,
-                  ]}
-                >
-                  <TouchableOpacity onPress={() => toggleSelect(cardIndex)}>
-                    <View
-                      style={[
-                        styles.circle,
-                        selectedCards[cardIndex] && styles.checkedCircle,
-                      ]}
-                    >
-                      {selectedCards[cardIndex] && (
-                        <Icon name="check" color="#fff" size={16} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  <Image source={productImage} style={styles.productImage} />
-
-                  <View style={styles.details}>
-                    <Text style={styles.productTitle}>Fresh Green Beans</Text>
-                    <Text style={styles.productDesc}>
-                      Locally Sourced · Crisp & Nutritious
-                    </Text>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.price}>INR 50.66</Text>
-                      <Text style={styles.cutPrice}>₹65.99</Text>
-                    </View>
-                    <View style={styles.buttonRow}>
-                      <TouchableOpacity style={styles.knowMore}>
-                        <Text style={styles.knowText}>Know More</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.cartBtn}>
-                        <Text style={styles.cartText}>Add To Cart</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        ))}
-      </ScrollView>
+      {/* Show results ONLY if text is entered */}
+      {searchText.trim().length > 0 && (
+        <ScrollView style={styles.resultContainer}>
+          {filteredProducts.length > 0 ? (
+            filteredProducts.map((item, index) => (
+              <View key={index} style={styles.resultItem}>
+                <Text style={styles.resultText}>{item}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noResult}>No products found</Text>
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -123,121 +84,68 @@ const SearchScreen = () => {
 export default SearchScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
   header: {
     flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  city: { fontSize: 16, fontWeight: 'bold' },
-  country: { fontSize: 12, color: 'gray' },
-
+  locationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  city: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  country: {
+    fontSize: 12,
+    color: 'gray',
+  },
+  userButton: {
+    padding: 5,
+    borderRadius: 10,
+    backgroundColor: '#f0f0f0',
+  },
   searchContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 8,
     borderRadius: 30,
-    alignItems: 'center',
-    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  searchInput: { marginLeft: 8, flex: 1 },
-
-  platformSection: { marginBottom: 20 },
-  platformHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderColor: 'green', // ✅ Green border
     marginBottom: 10,
   },
-  platformLogo: { width: 80, height: 40, resizeMode: 'cover', borderRadius: 5 },
-  seeAll: { color: 'green', fontWeight: 'bold' },
-
-  card: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f8f8',
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 16,
+    paddingVertical: 4,
+  },
+  resultContainer: {
+    flex: 1,
+  },
+  resultItem: {
     padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    alignItems: 'center',
-    elevation: 2,
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
   },
-  selectedCard: {
-    borderColor: 'green',
+  resultText: {
+    fontSize: 16,
   },
-
-  circle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: '#ccc',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkedCircle: {
-    backgroundColor: 'green',
-    borderColor: 'green',
-  },
-
-  productImage: {
-    width: 80,
-    height: 100,
-    resizeMode: 'contain',
-    marginRight: 12,
-  },
-
-  details: { flex: 1 },
-  productTitle: { fontSize: 16, fontWeight: 'bold' },
-  productDesc: { fontSize: 12, color: 'gray', marginVertical: 4 },
-
-  priceRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
-  price: { color: 'green', fontWeight: 'bold', fontSize: 16 },
-  cutPrice: {
-    textDecorationLine: 'line-through',
-    marginLeft: 6,
+  noResult: {
+    marginTop: 20,
+    textAlign: 'center',
     color: 'gray',
-    fontSize: 12,
+    fontSize: 16,
   },
-
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 8,
-  },
-
-  locationBox: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  flex: 1, // This takes up all space except user icon
-  marginRight: 8,
-},
-
-userButton: {
-  padding: 5,
-  borderRadius: 10,
-  backgroundColor: '#f0f0f0', // Optional: background for visibility
-},
-  knowMore: {
-    borderColor: 'green',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  cartBtn: {
-    backgroundColor: 'green',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  knowText: { color: 'green', fontSize: 12 },
-  cartText: { color: '#fff', fontSize: 12 },
 });

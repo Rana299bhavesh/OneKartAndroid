@@ -9,7 +9,9 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import auth from '@react-native-firebase/auth';
-
+import { CommonActions } from '@react-navigation/native';
+import { LoginSchema } from '../components/validationSchemas';
+import { z } from 'zod';
 const InputField = ({
   icon,
   placeholder,
@@ -74,25 +76,20 @@ const LoginScreen = ({ navigation }) => {
   const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
   const onLogin = async () => {
-    setErrorMessage('');
+  setErrorMessage('');
+  try {
+    const parsed = LoginSchema.parse({ email, password });
 
-    if (!email || !password) {
-      setErrorMessage('Please enter both email and password.');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-
-    try {
-      await auth().signInWithEmailAndPassword(email, password);
-      navigation.replace('Home');
-    } catch (error) {
+    await auth().signInWithEmailAndPassword(parsed.email, parsed.password);
+    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Home' }] }));
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      setErrorMessage(error.errors[0].message);
+    } else {
       setErrorMessage(error.message || 'Something went wrong.');
     }
-  };
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -169,20 +166,20 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   inputWrapper: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#fff',
-  borderRadius: 9999,
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  width: '90%',
-  marginTop: 38,
-  elevation: 4,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 9999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    width: '90%',
+    marginTop: 38,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
 
   iconLeft: {
     marginRight: 10,

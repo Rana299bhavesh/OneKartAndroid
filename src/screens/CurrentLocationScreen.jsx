@@ -11,7 +11,7 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
@@ -31,6 +31,7 @@ const CurrentLocationScreen = () => {
 
   const getCurrentLocation = async () => {
     const hasPermission = await requestLocationPermission();
+    console.log('Permission result:', hasPermission);
     if (!hasPermission) {
       Alert.alert('Permission Denied', 'Location permission is required.');
       return;
