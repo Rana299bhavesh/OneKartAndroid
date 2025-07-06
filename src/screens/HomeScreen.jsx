@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { PermissionsAndroid, Platform } from 'react-native';
 import {
   View,
   Text,
@@ -6,21 +7,27 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  Modal,
+  
+  Alert,
 } from 'react-native';
+import { ActivityIndicator } from 'react-native';
+
+// Ensure you have .env set up correctly
+import Toast from 'react-native-root-toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import Geolocation from '@react-native-community/geolocation';
 
 import auth from '@react-native-firebase/auth';
-import Toast from 'react-native-root-toast';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-
+import UserIconWithModal from '../components/UserIconWithModal';
 const platforms = [
   { name: 'blinkit', image: require('../assets/Images/blinkit.png') },
   { name: 'zepto', image: require('../assets/Images/zepto.png') },
   { name: 'jioMart', image: require('../assets/Images/jiomart.png') },
   { name: 'dmart', image: require('../assets/Images/dmart.png') },
+  { name: 'swiggy', image: require('../assets/Images/swiggy.png') },
 ];
 
 const platformLogos = {
@@ -28,6 +35,7 @@ const platformLogos = {
   zepto: require('../assets/Images/zepto.png'),
   jioMart: require('../assets/Images/jiomart.png'),
   dmart: require('../assets/Images/dmart.png'),
+  swiggy: require('../assets/Images/swiggy.png'),
 };
 
 const productCardData = [
@@ -40,8 +48,10 @@ const productCardData = [
       zepto: { time: '20 mins', price: 'Rs 58' },
       jioMart: { time: '20 mins', price: 'Rs 61' },
       dmart: { time: '20 mins', price: 'Rs 59' },
+      swiggy: { time: '25 mins', price: 'Rs 62' },
     },
   },
+
   {
     title: 'Fresh Green Beans',
     description: 'Locally sourced • Crisp & Nutritious',
@@ -51,8 +61,10 @@ const productCardData = [
       zepto: { time: '20 mins', price: 'Rs 58' },
       jioMart: { time: '20 mins', price: 'Rs 61' },
       dmart: { time: '20 mins', price: 'Rs 59' },
+      swiggy: { time: '25 mins', price: 'Rs 62' },
     },
   },
+
   {
     title: 'Fresh Green Beans',
     description: 'Locally sourced • Crisp & Nutritious',
@@ -62,8 +74,10 @@ const productCardData = [
       zepto: { time: '20 mins', price: 'Rs 58' },
       jioMart: { time: '20 mins', price: 'Rs 61' },
       dmart: { time: '20 mins', price: 'Rs 59' },
+      swiggy: { time: '25 mins', price: 'Rs 62' },
     },
   },
+
   {
     title: 'Fresh Green Beans',
     description: 'Locally sourced • Crisp & Nutritious',
@@ -73,35 +87,28 @@ const productCardData = [
       zepto: { time: '20 mins', price: 'Rs 58' },
       jioMart: { time: '20 mins', price: 'Rs 61' },
       dmart: { time: '20 mins', price: 'Rs 59' },
+      swiggy: { time: '25 mins', price: 'Rs 62' },
     },
   },
+  // Duplicate this object as needed...
 ];
 
 export default function HomeScreen() {
-  const navigation = useNavigation();
-  const route = useRoute();
-
   const [selectedRows, setSelectedRows] = useState({});
-  const [userModalVisible, setUserModalVisible] = useState(false);
-  const [username, setUsername] = useState('User');
-  const [locationName, setLocationName] = useState('Your Location');
+  const [modalVisible, setModalVisible] = useState(false);
+const [username, setUsername] = useState('User');
 
-  // Set username from auth user on mount
+  const [locationInput, setLocationInput] = useState('');
+  const [loadingLocation, setLoadingLocation] = useState(true);
+
+  const navigation = useNavigation();
+
   useEffect(() => {
     const user = auth().currentUser;
     if (user) {
       setUsername(user.displayName || user.email || 'User');
     }
   }, []);
-
-  // Update locationName if passed from CurrentLocationScreen
-  useFocusEffect(
-    useCallback(() => {
-      if (route.params?.locationName) {
-        setLocationName(route.params.locationName);
-      }
-    }, [route.params?.locationName])
-  );
 
   const handleLogout = async () => {
     try {
@@ -123,30 +130,100 @@ export default function HomeScreen() {
     }
   };
 
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+    return true; // iOS asks automatically
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setLoadingLocation(true);
+
+    const hasPermission = await requestLocationPermission();
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Location permission is required.');
+      setLoadingLocation(false);
+      return;
+    }
+
+    Geolocation.getCurrentPosition(
+      async position => {
+        const { latitude, longitude } = position.coords;
+        console.log("Actual Location:", latitude, longitude);
+
+        try {
+          const response = await axios.get(
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude},${longitude}&key=936f3bcd520843d99ff3fe2311fce72c`
+          );
+
+          if (response.data.results.length > 0) {
+            const address = response.data.results[0].formatted;
+            setLocationInput(address);
+          } else {
+            Alert.alert('Location Error', 'Unable to retrieve address.');
+          }
+
+          setModalVisible(false);
+        } catch (error) {
+          if (__DEV__) {
+            console.error('API Error:', error?.response?.data || error.message);
+          }
+
+          Alert.alert('API Error', 'Failed to fetch address.');
+        } finally {
+          setLoadingLocation(false);
+        }
+      },
+      error => {
+        console.error('Geolocation Error:', JSON.stringify(error));
+        Alert.alert('Error', `Unable to access location'+ ${error.message}`);
+        setLoadingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000, forceRequestLocation: true, distanceFilter: 0, }
+    );
+  };
+  useEffect(() => {
+    if (!locationInput) {
+      handleUseCurrentLocation();
+    }
+  }, []);
+
+
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.container}>
         {/* Location & User Bar */}
         <View style={styles.locationContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('CurrentLocation')}>
+          <TouchableOpacity onPress={handleUseCurrentLocation}>
             <Icon name="map-marker" size={22} color="#333" />
           </TouchableOpacity>
-          <View>
-            <Text style={styles.locationText}>{locationName}</Text>
+          <View style={{ flex: 1, marginLeft: 8, marginRight: 8 }}>
+            {loadingLocation ? (
+              <ActivityIndicator size="small" color="green" />
+            ) : (
+              <Text
+                style={styles.locationText}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {locationInput || 'Tap to get location'}
+              </Text>
+            )}
             <Text style={styles.countryText}>India</Text>
           </View>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={() => navigation.navigate('Search')}
-          >
+
+          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('Search', { locationInput })}>
             <Icon name="magnify" size={22} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.userButton}
-            onPress={() => setUserModalVisible(true)}
-          >
-            <Icon name="account-circle" size={28} color="#000" />
-          </TouchableOpacity>
+          <View style={styles.userButton}>
+            <UserIconWithModal />
+          </View>
+
         </View>
 
         {/* Banner */}
@@ -197,8 +274,10 @@ export default function HomeScreen() {
                       style={[styles.priceRow, isSelected && styles.selectedRow]}
                     >
                       <Image source={platformLogos[platform]} style={styles.priceLogo} />
+                      <View style={styles.timePriceRow}>
                       <View style={styles.timeBox}>
                         <Text style={styles.timeText}>{time}</Text>
+                      </View>
                       </View>
                       <View style={styles.priceBox}>
                         <Text style={styles.priceText}>{price}</Text>
@@ -216,25 +295,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* User Modal */}
-      <Modal
-        visible={userModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setUserModalVisible(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.modalOverlay}
-          onPressOut={() => setUserModalVisible(false)}
-        >
-          <View style={styles.userModalContent}>
-            <Text style={styles.userNameText}>{username}</Text>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -244,21 +305,23 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     marginBottom: 15,
+    flexWrap: 'nowrap',
   },
   locationText: { fontWeight: 'bold', fontSize: 16 },
   countryText: { fontSize: 12, color: '#666' },
   searchButton: {
-    marginLeft: 'auto',
     backgroundColor: '#eee',
     padding: 8,
     borderRadius: 8,
+    marginHorizontal: 4,
   },
   userButton: {
-    marginLeft: 10,
+
     padding: 5,
-    borderRadius: 20,
+  borderRadius: 10,
+  backgroundColor: '#f0f0f0',
   },
   banner: {
     width: '100%',
@@ -274,28 +337,38 @@ const styles = StyleSheet.create({
   },
   platformsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 5,
+  justifyContent: 'space-evenly', // evenly spaced icons
+  alignItems: 'center',
+  marginBottom: 20,
+  paddingHorizontal: 0,
   },
   platformWrapper: {
-    width: 80,
-    height: 50,
-    borderColor: '#ccc',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    elevation: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 5,
+  width: 75,             // consistent box width
+  height: 45,            // consistent box height
+  borderWidth: 1.5,
+  borderColor: '#ccc',
+  borderRadius: 10,
+  backgroundColor: '#fff',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 5,
+  marginHorizontal: 1,
+  overflow: 'hidden',
+  elevation: 1,
   },
   platformIcon: {
-    width: '120%',
-    height: '130%',
-    resizeMode: 'cover',
-    borderRadius: 8,
+    width: 110,
+    height: 60,
+    resizeMode: 'contain',
+    // consistent border radius
   },
+  timePriceRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  flex: 1,
+  marginLeft: 10, // spacing between logo and time box
+  gap: 10,
+},
   compareHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -329,40 +402,45 @@ const styles = StyleSheet.create({
   availableText: { fontWeight: '600', marginBottom: 4, color: 'black' },
   priceRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+  alignItems: 'center',
+  marginBottom: 6,
+  paddingVertical: 4,
+  paddingHorizontal: 6,
+  borderRadius: 10,
   },
   selectedRow: {
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
-    padding: 4,
+  
+
   },
   priceLogo: {
     width: 40,
-    height: 25,
-    resizeMode: 'contain',
-    borderRadius: 10,
+  height: 25,
+  resizeMode: 'contain',
+  borderRadius: 6,
   },
   timeBox: {
-    backgroundColor: '#FFE4B5',
-    paddingHorizontal: 3,
-    paddingVertical: 2,
-    borderRadius: 6,
-    marginLeft: 8,
-    borderWidth: 1.5,
-    borderColor: '#FB8C0080',
+  backgroundColor: '#FFE4B5',
+  paddingHorizontal: 6,
+  paddingVertical: 2, // MATCHED
+  borderRadius: 6,
+  borderWidth: 1.5,
+  borderColor: '#FB8C0080',
+  alignItems: 'center',
+  justifyContent: 'center',
   },
   timeText: { color: '#FF8C00', fontSize: 12, fontWeight: '600' },
   priceBox: {
-    backgroundColor: '#E0F3E0',
-    paddingHorizontal: 2,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: '#A5D6A7',
+  backgroundColor: '#E0F3E0',
+  paddingHorizontal: 6,
+  paddingVertical: 4, // MATCHED
+  borderRadius: 6,
+  borderWidth: 1.5,
+  borderColor: '#A5D6A7',
+  alignItems: 'center',
+  justifyContent: 'center',
   },
   priceText: { fontWeight: '500', fontSize: 13 },
   cartButton: {

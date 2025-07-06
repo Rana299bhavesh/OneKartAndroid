@@ -116,7 +116,7 @@ const SignUpScreen = ({ navigation }) => {
 
       setSuccessMessage('User account created successfully!');
       setTimeout(() => {
-        navigation.replace('CurrentLocation');
+        navigation.replace('Home');
       }, 1500);
     } catch (error) {
       if (error.code === 'auth/email-already-in-use') {

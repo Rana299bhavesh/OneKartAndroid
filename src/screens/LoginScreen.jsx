@@ -88,7 +88,7 @@ const LoginScreen = ({ navigation }) => {
 
     try {
       await auth().signInWithEmailAndPassword(email, password);
-      navigation.replace('CurrentLocation');
+      navigation.replace('Home');
     } catch (error) {
       setErrorMessage(error.message || 'Something went wrong.');
     }

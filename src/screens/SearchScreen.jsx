@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import UserIconWithModal from '../components/UserIconWithModal';
+import { useRoute } from '@react-navigation/native';
 const productImage = require('../assets/Images/boofer.png'); // Replace with actual image path
 const blinkitLogo = require('../assets/Images/blinkit.png');
 const zeptoLogo = require('../assets/Images/zepto.png');
@@ -22,7 +23,8 @@ const platforms = [
 
 const SearchScreen = () => {
   const [selectedCards, setSelectedCards] = useState({});
-
+  const route = useRoute();
+  const locationFromParams = route.params?.locationInput || 'Loading location...';
   const toggleSelect = (index) => {
     setSelectedCards((prev) => ({
       ...prev,
@@ -33,12 +35,24 @@ const SearchScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Icon name="map-marker" size={24} color="#000" />
-        <View>
-          <Text style={styles.city}>Zurich, love road</Text>
-          <Text style={styles.country}>Switzerland</Text>
-        </View>
-      </View>
+  {/* Left: Map icon + location */}
+  <View style={styles.locationBox}>
+    <Icon name="map-marker" size={24} color="#000" style={{ marginRight: 8 }} />
+    <View style={{ flexShrink: 1 }}>
+      <Text style={styles.city} numberOfLines={1} ellipsizeMode="tail">
+        {locationFromParams}
+      </Text>
+      <Text style={styles.country}>India</Text>
+    </View>
+  </View>
+
+  {/* Right: User icon */}
+  <View style={styles.userButton}>
+    <UserIconWithModal />
+  </View>
+</View>
+
+
 
       <View style={styles.searchContainer}>
         <Icon name="magnify" size={24} color="gray" />
@@ -113,9 +127,9 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 12,
   },
   city: { fontSize: 16, fontWeight: 'bold' },
   country: { fontSize: 12, color: 'gray' },
@@ -198,6 +212,19 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 8,
   },
+
+  locationBox: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  flex: 1, // This takes up all space except user icon
+  marginRight: 8,
+},
+
+userButton: {
+  padding: 5,
+  borderRadius: 10,
+  backgroundColor: '#f0f0f0', // Optional: background for visibility
+},
   knowMore: {
     borderColor: 'green',
     borderWidth: 1,
