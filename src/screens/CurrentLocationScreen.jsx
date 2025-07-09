@@ -42,7 +42,13 @@ const CurrentLocationScreen = () => {
         const { latitude, longitude } = position.coords;
         try {
           const response = await axios.get(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude},${longitude}&key=936f3bcd520843d99ff3fe2311fce72c`
+            `https://api.opencagedata.com/geocode/v1/json?q=${latitude},${longitude}&key=936f3bcd520843d99ff3fe2311fce72c`,
+            {
+              timeout: 10000, // 10 second timeout
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
           );
           if (response.data.results.length > 0) {
             setLocationInput(response.data.results[0].formatted);
@@ -50,13 +56,42 @@ const CurrentLocationScreen = () => {
             Alert.alert('Location Error', 'Unable to retrieve address.');
           }
         } catch (error) {
-          Alert.alert('API Error', 'Failed to fetch address.');
+          console.error('Geocoding API Error:', error.message);
+          if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+            Alert.alert('Network Error', 'Please check your internet connection and try again.');
+          } else {
+            Alert.alert('API Error', 'Failed to fetch address. Please try again.');
+          }
         }
       },
       error => {
-        Alert.alert('Error', 'Unable to access location');
+        console.error('Geolocation Error:', JSON.stringify(error));
+        
+        // Enhanced error messages for different scenarios
+        let errorMessage = 'Unable to access location';
+        switch(error.code) {
+          case 1: // PERMISSION_DENIED
+            errorMessage = 'Location permission denied. Please enable location access in settings.';
+            break;
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = 'Location unavailable. Please ensure GPS is enabled and try again.';
+            break;
+          case 3: // TIMEOUT
+            errorMessage = 'Location request timed out. Please try again.';
+            break;
+          default:
+            errorMessage = `Unable to access location: ${error.message}`;
+        }
+        
+        Alert.alert('Location Error', errorMessage);
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      { 
+        enableHighAccuracy: true, 
+        timeout: 30000, 
+        maximumAge: 10000,
+        showLocationDialog: true, // Show location dialog if GPS is off
+        forceLocationManager: false // Use Google Play Services when available
+      }
     );
   };
 
