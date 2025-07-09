@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { StyleSheet, View, Text, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,11 +12,14 @@ const Location = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Choose Your Location</Text>
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Choose Your Location</Text>
+        </View>
+      </TouchableWithoutFeedback>
 
-      <GooglePlacesAutocomplete
+      <View style={styles.autocompleteContainer}>
+        <GooglePlacesAutocomplete
         ref={googlePlacesRef}
         placeholder="Search for location"
         fetchDetails={true}
@@ -36,9 +39,11 @@ const Location = ({ navigation }) => {
           language: 'en',
         }}
         enablePoweredByContainer={false}
-        keyboardShouldPersistTaps="handled"
-        listViewDisplayed={false}
+        keyboardShouldPersistTaps="always"
+        listViewDisplayed="auto"
         keepResultsAfterBlur={true}
+        suppressDefaultStyles={false}
+        enableHighAccuracyLocation={false}
         styles={{
           container: {
             flex: 0,
@@ -69,8 +74,11 @@ const Location = ({ navigation }) => {
             backgroundColor: '#fff',
             borderRadius: 10,
             marginTop: 5,
-            elevation: 3,
-            position: 'relative',
+            elevation: 5,
+            position: 'absolute',
+            top: 55,
+            left: 0,
+            right: 0,
             zIndex: 1000,
           },
           row: {
@@ -97,13 +105,18 @@ const Location = ({ navigation }) => {
         debounce={300}
         textInputProps={{
           autoCorrect: false,
+          returnKeyType: 'search',
           onFocus: () => setIsFocused(true),
-          onBlur: () => {
-            // Delay the blur to allow for tap selection
-            setTimeout(() => setIsFocused(false), 150);
-          },
+          onBlur: () => setIsFocused(false),
         }}
-      />
+        renderRow={(rowData) => {
+          const title = rowData.structured_formatting ? rowData.structured_formatting.main_text : rowData.description;
+          return (
+            <Text style={{ fontSize: 14 }}>{title}</Text>
+          );
+                 }}
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -122,6 +135,10 @@ const styles = StyleSheet.create({
     fontSize: width < 380 ? 20 : 22,
     fontWeight: '600',
     color: '#1a1a1a',
+  },
+  autocompleteContainer: {
+    flex: 1,
+    zIndex: 1,
   },
 });
 
