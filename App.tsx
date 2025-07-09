@@ -5,15 +5,19 @@ import { ActivityIndicator, View } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 // Screens
+import 'react-native-get-random-values';
+
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ResetScreen from './src/screens/ResetScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import CurrentLocationScreen from './src/screens/CurrentLocationScreen';
+// import CurrentLocationScreen from './src/screens/CurrentLocationScreen';
 import SearchScreen from './src/screens/SearchScreen';
 import UserProfileScreen from './src/screens/UserProfileScreen';
+import LoadingScreen from './src/screens/LoadingScreen';
+import Location from './src/screens/Location';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,12 +45,17 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        
         {user ? (
           <>
+          <Stack.Screen name="Loading" component={LoadingScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="CurrentLocation" component={CurrentLocationScreen} />
+            <Stack.Screen name="Location" component={Location} />
+            {/* <Stack.Screen name="CurrentLocation" component={CurrentLocationScreen} /> */}
             <Stack.Screen name="Search" component={SearchScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
+
+            
           </>
         ) : (
           <>
@@ -55,7 +64,6 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="Reset" component={ResetScreen} />
-            
           </>
         )}
       </Stack.Navigator>

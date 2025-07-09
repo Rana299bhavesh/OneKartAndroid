@@ -119,14 +119,15 @@ const SignUpScreen = ({ navigation }) => {
     });
 
     setSuccessMessage('User account created successfully!');
-    setTimeout(() => {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        })
-      );
-    }, 1500);
+//     setTimeout(() => {
+//       navigation.dispatch(
+//   CommonActions.reset({
+//     index: 0,
+//     routes: [{ name: 'Loading', params: { target: 'Home' } }],
+//   })
+// );
+
+//     }, 1500);
   } catch (error) {
     if (error.code === 'auth/email-already-in-use') {
       setErrorMessage('That email address is already in use!');

@@ -81,7 +81,11 @@ const LoginScreen = ({ navigation }) => {
     const parsed = LoginSchema.parse({ email, password });
 
     await auth().signInWithEmailAndPassword(parsed.email, parsed.password);
-    navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Home' }] }));
+//     navigation.dispatch(CommonActions.reset({
+//   index: 0,
+//   routes: [{ name: 'Loading', params: { target: 'Home' } }]
+// }));
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       setErrorMessage(error.errors[0].message);

@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { ActivityIndicator } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 
 // Ensure you have .env set up correctly
 import Toast from 'react-native-root-toast';
@@ -107,7 +108,15 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const screenWidth = Dimensions.get('window').width;
   const CARD_MARGIN = 12;
-  const CARD_WIDTH = (screenWidth - CARD_MARGIN * 3) / 2; // 2 cards + 3 gaps (left, right, and between)
+  const CARD_WIDTH = (screenWidth - CARD_MARGIN * 3) / 2;
+  const route = useRoute();
+
+useEffect(() => {
+  if (route.params?.selectedLocation) {
+    setLocationInput(route.params.selectedLocation);
+  }
+}, [route.params?.selectedLocation]);
+
 
   useEffect(() => {
     const user = auth().currentUser;
@@ -163,11 +172,13 @@ export default function HomeScreen() {
 
         try {
           const response = await axios.get(
-            `https://api.opencagedata.com/geocode/v1/json?q=${latitude},${longitude}&key=936f3bcd520843d99ff3fe2311fce72c`
-          );
+  `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDuiG4188Rc0721956iF1ZO3nn6wyR2cg0`
+);
+
 
           if (response.data.results.length > 0) {
-            const address = response.data.results[0].formatted;
+            const address = response.data.results[0].formatted_address;
+
             setLocationInput(address);
           } else {
             Alert.alert('Location Error', 'Unable to retrieve address.');
@@ -192,11 +203,14 @@ export default function HomeScreen() {
       { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000, forceRequestLocation: true, distanceFilter: 0, }
     );
   };
-  useEffect(() => {
-    if (!locationInput) {
-      handleUseCurrentLocation();
-    }
-  }, []);
+ useEffect(() => {
+  if (route.params?.selectedLocation) {
+    setLocationInput(route.params.selectedLocation);
+    setLoadingLocation(false); // ✅ important!
+  } else {
+    handleUseCurrentLocation();
+  }
+}, [route.params?.selectedLocation]);
 
 
 
@@ -205,25 +219,29 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.container}>
         {/* Location & User Bar */}
         <View style={styles.locationContainer}>
-          <TouchableOpacity onPress={handleUseCurrentLocation}>
-            <Icon name="map-marker" size={22} color="#333" />
-          </TouchableOpacity>
-          <View style={{ flex: 1, marginLeft: 8, marginRight: 8 }}>
-            {loadingLocation ? (
-              <ActivityIndicator size="small" color="green" />
-            ) : (
-              <Text
-                style={styles.locationText}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {locationInput || 'Tap to get location'}
-              </Text>
-            )}
-            <Text style={styles.countryText}>India</Text>
-          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('Location')}>
+  <Icon name="map-marker" size={22} color="#333" />
+</TouchableOpacity>
 
-          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('Search', { locationInput })}>
+          <View style={{ flex: 1, marginLeft: 8, marginRight: 8 }}>
+  {loadingLocation ? (
+    <ActivityIndicator size="small" color="green" />
+  ) : (
+    <TouchableOpacity onPress={() => navigation.navigate('Location')}>
+      <Text
+        style={styles.locationText}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {locationInput || 'Tap to get location'}
+      </Text>
+    </TouchableOpacity>
+  )}
+  <Text style={styles.countryText}>India</Text>
+</View>
+
+
+          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('Loading', { target: 'Search', locationInput })}>
             <Icon name="magnify" size={22} color="#000" />
           </TouchableOpacity>
           <View style={styles.userButton}>
